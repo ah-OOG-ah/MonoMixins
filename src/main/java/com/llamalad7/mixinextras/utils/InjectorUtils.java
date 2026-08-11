@@ -1,0 +1,185 @@
+package com.llamalad7.mixinextras.utils;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import org.spongepowered.asm.lib.Type;
+import org.spongepowered.asm.lib.tree.AbstractInsnNode;
+import org.spongepowered.asm.lib.tree.InsnList;
+import org.spongepowered.asm.lib.tree.MethodInsnNode;
+import org.spongepowered.asm.lib.tree.TypeInsnNode;
+import org.spongepowered.asm.mixin.injection.code.Injector;
+import org.spongepowered.asm.mixin.injection.modify.LocalVariableDiscriminator;
+import org.spongepowered.asm.mixin.injection.struct.InjectionInfo;
+import org.spongepowered.asm.mixin.injection.struct.InjectionNodes;
+import org.spongepowered.asm.mixin.injection.struct.Target;
+import org.spongepowered.asm.util.Bytecode;
+import org.spongepowered.asm.util.PrettyPrinter;
+import org.spongepowered.asm.util.SignaturePrinter;
+
+public class InjectorUtils {
+   public static boolean isVirtualRedirect(InjectionNodes.InjectionNode node) {
+      return node.isReplaced() && node.hasDecoration("redirector") && node.getCurrentTarget().getOpcode() != 184;
+   }
+
+   public static boolean isDynamicInstanceofRedirect(InjectionNodes.InjectionNode node) {
+      AbstractInsnNode originalTarget = node.getOriginalTarget();
+      AbstractInsnNode currentTarget = node.getCurrentTarget();
+      return originalTarget.getOpcode() == 193
+         && currentTarget instanceof MethodInsnNode
+         && Type.getReturnType(((MethodInsnNode)currentTarget).desc).equals(Type.getType(Class.class));
+   }
+
+   public static void checkForDupedNews(Map<Target, List<InjectionNodes.InjectionNode>> targets) {
+      for (Entry<Target, List<InjectionNodes.InjectionNode>> entry : targets.entrySet()) {
+         for (InjectionNodes.InjectionNode node : entry.getValue()) {
+            AbstractInsnNode currentTarget = node.getCurrentTarget();
+            if (currentTarget.getOpcode() == 187 && currentTarget.getNext().getOpcode() == 89) {
+               node.decorate("mixinextras_newIsDuped", true);
+            }
+         }
+      }
+   }
+
+   public static boolean isDupedNew(InjectionNodes.InjectionNode node) {
+      AbstractInsnNode currentTarget = node.getCurrentTarget();
+      return currentTarget != null && currentTarget.getOpcode() == 187 && node.hasDecoration("mixinextras_newIsDuped");
+   }
+
+   public static boolean isDupedFactoryRedirect(InjectionNodes.InjectionNode node) {
+      AbstractInsnNode originalTarget = node.getOriginalTarget();
+      return node.isReplaced()
+         && originalTarget.getOpcode() == 187
+         && !node.hasDecoration("mixinextras_wrappedOperation")
+         && node.hasDecoration("mixinextras_newIsDuped");
+   }
+
+   public static void checkForImmediatePops(Map<Target, List<InjectionNodes.InjectionNode>> targets) {
+      for (List<InjectionNodes.InjectionNode> nodeList : targets.values()) {
+         for (InjectionNodes.InjectionNode node : nodeList) {
+            AbstractInsnNode currentTarget = node.getCurrentTarget();
+            if (currentTarget instanceof MethodInsnNode) {
+               Type returnType = Type.getReturnType(((MethodInsnNode)currentTarget).desc);
+               if (isTypePoppedByInstruction(returnType, currentTarget.getNext())) {
+                  node.decorate("mixinextras_operationIsImmediatelyPopped", true);
+               }
+            }
+         }
+      }
+   }
+
+   private static boolean isTypePoppedByInstruction(Type type, AbstractInsnNode insn) {
+      switch (type.getSize()) {
+         case 1:
+            return insn.getOpcode() == 87;
+         case 2:
+            return insn.getOpcode() == 88;
+         default:
+            return false;
+      }
+   }
+
+   public static LocalVariableDiscriminator.Context getOrCreateLocalContext(
+      Target target, InjectionNodes.InjectionNode node, InjectionInfo info, Type targetType, boolean isArgsOnly
+   ) {
+      String decorationKey = getLocalContextKey(targetType, isArgsOnly);
+      if (node.hasDecoration(decorationKey)) {
+         return node.getDecoration(decorationKey);
+      } else {
+         LocalVariableDiscriminator.Context context = CompatibilityHelper.makeLvtContext(info, targetType, isArgsOnly, target, node.getCurrentTarget());
+         node.decorate(decorationKey, context);
+         return context;
+      }
+   }
+
+   private static String getLocalContextKey(Type targetType, boolean isArgsOnly) {
+      return String.format("mixinextras_persistent_localContext(%s,%s)", targetType, isArgsOnly ? "argsOnly" : "fullFrame");
+   }
+
+   public static void printLocals(
+      Target target,
+      AbstractInsnNode node,
+      LocalVariableDiscriminator.Context context,
+      LocalVariableDiscriminator discriminator,
+      Type targetType,
+      boolean isArgsOnly
+   ) {
+      int baseArgIndex = target.isStatic ? 0 : 1;
+      new PrettyPrinter()
+         .kvWidth(20)
+         .kv("Target Class", target.classNode.name.replace('/', '.'))
+         .kv("Target Method", target.method.name)
+         .kv("Capture Type", SignaturePrinter.getTypeName(targetType, false))
+         .kv("Instruction", "[%d] %s %s", target.insns.indexOf(node), node.getClass().getSimpleName(), Bytecode.getOpcodeName(node.getOpcode()))
+         .hr()
+         .kv("Match mode", isImplicit(discriminator, baseArgIndex) ? "IMPLICIT (match single)" : "EXPLICIT (match by criteria)")
+         .kv("Match ordinal", discriminator.getOrdinal() < 0 ? "any" : discriminator.getOrdinal())
+         .kv("Match index", discriminator.getIndex() < baseArgIndex ? "any" : discriminator.getIndex())
+         .kv("Match name(s)", discriminator.hasNames() ? discriminator.getNames() : "any")
+         .kv("Args only", isArgsOnly)
+         .hr()
+         .add((PrettyPrinter.IPrettyPrintable)context)
+         .print(System.err);
+   }
+
+   private static boolean isImplicit(LocalVariableDiscriminator discriminator, int baseArgIndex) {
+      return discriminator.getOrdinal() < 0 && discriminator.getIndex() < baseArgIndex && discriminator.getNames().isEmpty();
+   }
+
+   public static void decorateInjectorSpecific(InjectionNodes.InjectionNode node, InjectionInfo info, String key, Object value) {
+      if (!node.hasDecoration(key)) {
+         node.decorate(key, new HashMap());
+      }
+
+      Map<InjectionInfo, Object> inner = node.getDecoration(key);
+      inner.put(info, value);
+   }
+
+   public static <T> T getInjectorSpecificDecoration(InjectionNodes.InjectionNode node, InjectionInfo info, String key) {
+      Map<InjectionInfo, T> map = node.getDecoration(key);
+      return map == null ? null : map.get(info);
+   }
+
+   public static boolean hasInjectorSpecificDecoration(InjectionNodes.InjectionNode node, InjectionInfo info, String key) {
+      Map<InjectionInfo, ?> map = node.getDecoration(key);
+      return map == null ? false : map.containsKey(info);
+   }
+
+   public static void coerceReturnType(Injector.InjectorData data, InsnList insns, Type expectedReturnType) {
+      if (data.coerceReturnType && expectedReturnType.getSort() >= 9) {
+         insns.add(new TypeInsnNode(192, expectedReturnType.getInternalName()));
+      }
+   }
+
+   public static AbstractInsnNode findCoerce(InjectionNodes.InjectionNode target, Type expectedType) {
+      if (target.isReplaced() && !isDynamicInstanceofRedirect(target)) {
+         AbstractInsnNode currentTarget = target.getCurrentTarget();
+         if (!(currentTarget instanceof MethodInsnNode)) {
+            return null;
+         } else {
+            MethodInsnNode handlerCall = (MethodInsnNode)currentTarget;
+            if (!ASMUtils.isPrimitive(expectedType) && !Type.getReturnType(handlerCall.desc).equals(expectedType)) {
+               if (handlerCall.getNext().getOpcode() == 192) {
+                  TypeInsnNode cast = (TypeInsnNode)handlerCall.getNext();
+                  if (cast.desc.equals(expectedType.getInternalName())) {
+                     return cast;
+                  }
+               }
+
+               throw new AssertionError(
+                  String.format(
+                     "Could not find @Coerce CHECKCAST instruction! Expected '%s' but got '%s'! Please inform LlamaLad7!",
+                     "[CHECKCAST] " + expectedType.getInternalName(),
+                     Bytecode.describeNode(handlerCall.getNext())
+                  )
+               );
+            } else {
+               return null;
+            }
+         }
+      } else {
+         return null;
+      }
+   }
+}

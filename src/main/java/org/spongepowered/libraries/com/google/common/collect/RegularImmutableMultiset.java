@@ -1,0 +1,148 @@
+package org.spongepowered.libraries.com.google.common.collect;
+
+import java.util.Collection;
+import javax.annotation.Nullable;
+import org.spongepowered.libraries.com.google.common.annotations.GwtCompatible;
+import org.spongepowered.libraries.com.google.common.base.Objects;
+import org.spongepowered.libraries.com.google.common.base.Preconditions;
+import org.spongepowered.libraries.com.google.common.primitives.Ints;
+import org.spongepowered.libraries.com.google.errorprone.annotations.concurrent.LazyInit;
+
+@GwtCompatible(serializable = true)
+class RegularImmutableMultiset<E> extends ImmutableMultiset<E> {
+   static final RegularImmutableMultiset<Object> EMPTY = new RegularImmutableMultiset<>(ImmutableList.of());
+   private final transient Multisets.ImmutableEntry<E>[] entries;
+   private final transient Multisets.ImmutableEntry<E>[] hashTable;
+   private final transient int size;
+   private final transient int hashCode;
+   @LazyInit
+   private transient ImmutableSet<E> elementSet;
+
+   RegularImmutableMultiset(Collection<? extends Multiset.Entry<? extends E>> entries) {
+      int distinct = entries.size();
+      Multisets.ImmutableEntry<E>[] entryArray = new Multisets.ImmutableEntry[distinct];
+      if (distinct == 0) {
+         this.entries = entryArray;
+         this.hashTable = null;
+         this.size = 0;
+         this.hashCode = 0;
+         this.elementSet = ImmutableSet.of();
+      } else {
+         int tableSize = Hashing.closedTableSize(distinct, 1.0);
+         int mask = tableSize - 1;
+         Multisets.ImmutableEntry<E>[] hashTable = new Multisets.ImmutableEntry[tableSize];
+         int index = 0;
+         int hashCode = 0;
+         long size = 0L;
+
+         for (Multiset.Entry<? extends E> entry : entries) {
+            E element = Preconditions.checkNotNull((E)entry.getElement());
+            int count = entry.getCount();
+            int hash = element.hashCode();
+            int bucket = Hashing.smear(hash) & mask;
+            Multisets.ImmutableEntry<E> bucketHead = hashTable[bucket];
+            Multisets.ImmutableEntry<E> newEntry;
+            if (bucketHead == null) {
+               boolean canReuseEntry = entry instanceof Multisets.ImmutableEntry && !(entry instanceof RegularImmutableMultiset.NonTerminalEntry);
+               newEntry = canReuseEntry ? (Multisets.ImmutableEntry)entry : new Multisets.ImmutableEntry<>(element, count);
+            } else {
+               newEntry = new RegularImmutableMultiset.NonTerminalEntry<>(element, count, bucketHead);
+            }
+
+            hashCode += hash ^ count;
+            entryArray[index++] = newEntry;
+            hashTable[bucket] = newEntry;
+            size += count;
+         }
+
+         this.entries = entryArray;
+         this.hashTable = hashTable;
+         this.size = Ints.saturatedCast(size);
+         this.hashCode = hashCode;
+      }
+   }
+
+   @Override
+   boolean isPartialView() {
+      return false;
+   }
+
+   @Override
+   public int count(@Nullable Object element) {
+      Multisets.ImmutableEntry<E>[] hashTable = this.hashTable;
+      if (element != null && hashTable != null) {
+         int hash = Hashing.smearedHash(element);
+         int mask = hashTable.length - 1;
+
+         for (Multisets.ImmutableEntry<E> entry = hashTable[hash & mask]; entry != null; entry = entry.nextInBucket()) {
+            if (Objects.equal(element, entry.getElement())) {
+               return entry.getCount();
+            }
+         }
+
+         return 0;
+      } else {
+         return 0;
+      }
+   }
+
+   @Override
+   public int size() {
+      return this.size;
+   }
+
+   @Override
+   public ImmutableSet<E> elementSet() {
+      ImmutableSet<E> result = this.elementSet;
+      return result == null ? (this.elementSet = new RegularImmutableMultiset.ElementSet()) : result;
+   }
+
+   @Override
+   Multiset.Entry<E> getEntry(int index) {
+      return this.entries[index];
+   }
+
+   @Override
+   public int hashCode() {
+      return this.hashCode;
+   }
+
+   private final class ElementSet extends ImmutableSet.Indexed<E> {
+      private ElementSet() {
+      }
+
+      @Override
+      E get(int index) {
+         return RegularImmutableMultiset.this.entries[index].getElement();
+      }
+
+      @Override
+      public boolean contains(@Nullable Object object) {
+         return RegularImmutableMultiset.this.contains(object);
+      }
+
+      @Override
+      boolean isPartialView() {
+         return true;
+      }
+
+      @Override
+      public int size() {
+         return RegularImmutableMultiset.this.entries.length;
+      }
+   }
+
+   private static final class NonTerminalEntry<E> extends Multisets.ImmutableEntry<E> {
+      private final Multisets.ImmutableEntry<E> nextInBucket;
+
+      NonTerminalEntry(E element, int count, Multisets.ImmutableEntry<E> nextInBucket) {
+         super(element, count);
+         this.nextInBucket = nextInBucket;
+      }
+
+      @Override
+      public Multisets.ImmutableEntry<E> nextInBucket() {
+         return this.nextInBucket;
+      }
+   }
+}

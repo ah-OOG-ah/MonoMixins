@@ -1,0 +1,13 @@
+package org.spongepowered.libraries.com.google.common.collect;
+
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import org.spongepowered.libraries.com.google.common.annotations.GwtCompatible;
+
+@GwtCompatible
+public interface RowSortedTable<R, C, V> extends Table<R, C, V> {
+   SortedSet<R> rowKeySet();
+
+   SortedMap<R, Map<C, V>> rowMap();
+}
