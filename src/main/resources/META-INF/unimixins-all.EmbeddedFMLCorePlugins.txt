@@ -1,1 +1,0 @@
-io.github.legacymoddingmc.unimixins.mixin.MixinCore io.github.legacymoddingmc.unimixins.compat.CompatCore io.github.tox1cozz.mixinbooterlegacy.MixinBooterLegacyPlugin com.gtnewhorizon.gtnhmixins.core.GTNHMixinsCore io.github.legacymoddingmc.unimixins.mixinextras.MixinExtrasCore
