@@ -39,6 +39,10 @@ repositories {
 }
 
 val thinFML12 = sourceSets.create("thinFML12")
+
+val mixinVersion = "0.17.3+mixin.0.8.7"
+val mixinExtrasVersion = "0.5.4"
+
 dependencies {
     implementation(minecraft.dependency("net.minecraftforge:forge:${minecraft_version}-${forge_version}"))
 
@@ -64,7 +68,11 @@ renamer.classes("renameJarToSrg", tasks.named<Jar>("jar")) {
 
 tasks.processResources {
     filesMatching("mcmod.info") {
-        expand("projectVersion" to project.version)
+        expand(
+            "projectVersion" to project.version,
+            "mixinVersion" to mixinVersion,
+            "mixinExtrasVersion" to mixinExtrasVersion
+        )
     }
 }
 
