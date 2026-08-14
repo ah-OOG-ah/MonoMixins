@@ -2,6 +2,7 @@ package io.github.legacymoddingmc.unimixins.all;
 
 import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
 import cpw.mods.fml.relauncher.IFMLLoadingPlugin.MCVersion;
+import io.github.legacymoddingmc.unimixins.mixin.MixinCore;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -17,16 +18,17 @@ public class AllCore implements IFMLLoadingPlugin {
     public static final Logger LOGGER = LogManager.getLogger("unimixins");
 
     private static String[] embeddedCorePluginClassNames = new String[] {
-            "io.github.legacymoddingmc.unimixins.mixin.MixinCore",
             "io.github.legacymoddingmc.unimixins.compat.CompatCore",
             "io.github.tox1cozz.mixinbooterlegacy.MixinBooterLegacyPlugin",
             "com.gtnewhorizon.gtnhmixins.core.GTNHMixinsCore",
             "io.github.legacymoddingmc.unimixins.mixinextras.MixinExtrasCore"
     };
 
-    private static final List<Class<?>> embeddedCorePluginClasses = new ArrayList<>();
-    private static final Class<?>[] embeddedCorePluginClazzes = new Class[] {
+    private static final Class<?>[] knownCLaxxes = new Class[] {
+        MixinCore.class
     };
+    private static final List<Class<?>> embeddedCorePluginClasses = new ArrayList<>(Arrays.asList(knownCLaxxes));
+
     private static final List<IFMLLoadingPlugin> embeddedCorePluginInstances = new ArrayList<>();
 
     static {
