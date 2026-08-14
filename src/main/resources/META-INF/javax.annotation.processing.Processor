@@ -1,0 +1,4 @@
+com.llamalad7.mixinextras.ap.MixinExtrasAP
+io.github.tox1cozz.mixinextras.MixinExtrasAnnotationProcessor
+org.spongepowered.tools.obfuscation.MixinObfuscationProcessorInjection
+org.spongepowered.tools.obfuscation.MixinObfuscationProcessorTargets
