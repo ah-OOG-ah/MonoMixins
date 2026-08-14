@@ -1,4 +1,4 @@
-package all;
+package io.github.legacymoddingmc.unimixins.all;
 
 import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
 import cpw.mods.fml.relauncher.IFMLLoadingPlugin.MCVersion;
@@ -16,17 +16,26 @@ public class AllCore implements IFMLLoadingPlugin {
 
     public static final Logger LOGGER = LogManager.getLogger("unimixins");
 
-    private static List<Class<?>> embeddedCorePluginClasses = new ArrayList<>();
-    private static List<IFMLLoadingPlugin> embeddedCorePluginInstances = new ArrayList<>();
+    private static String[] embeddedCorePluginClassNames = new String[] {
+            "io.github.legacymoddingmc.unimixins.mixin.MixinCore",
+            "io.github.legacymoddingmc.unimixins.compat.CompatCore",
+            "io.github.tox1cozz.mixinbooterlegacy.MixinBooterLegacyPlugin",
+            "com.gtnewhorizon.gtnhmixins.core.GTNHMixinsCore",
+            "io.github.legacymoddingmc.unimixins.mixinextras.MixinExtrasCore"
+    };
+
+    private static final List<Class<?>> embeddedCorePluginClasses = new ArrayList<>();
+    private static final Class<?>[] embeddedCorePluginClazzes = new Class[] {
+    };
+    private static final List<IFMLLoadingPlugin> embeddedCorePluginInstances = new ArrayList<>();
 
     static {
         try {
-            for (String s : IOUtils.toString(AllCore.class.getResource("/META-INF/unimixins-all.EmbeddedFMLCorePlugins.txt")).split(" ")) {
+            for (String s : embeddedCorePluginClassNames) {
                 Class<?> cls = Class.forName(s);
                 embeddedCorePluginClasses.add(cls);
             }
-
-        } catch( Exception e) {
+        } catch(ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }

@@ -1,4 +1,4 @@
-package all;
+package io.github.legacymoddingmc.unimixins.all;
 
 import cpw.mods.fml.common.Mod;
 
