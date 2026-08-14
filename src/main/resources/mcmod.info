@@ -1,0 +1,11 @@
+{
+  "modid": "unimixins",
+  "name": "MonoMixins",
+  "description": "MonoMixins composite jar consisting of the following modules:\nMixin (Fabric Mixin), Compatibility, Mixingasm, SpongeMixins, MixinBooterLegacy, GTNHMixins, MixinExtras",
+  "version": "${projectVersion}",
+  "mcversion": "1.7.10",
+  "url": "https://github.com/LegacyModdingMC/MonoMixins",
+  "authorList": [
+    "makamys", "ah-OOG-ah"
+  ]
+}

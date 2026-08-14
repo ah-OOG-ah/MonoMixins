@@ -5,14 +5,19 @@ plugins {
     id("maven-publish")
     id("net.minecraftforge.gradle") version "[7.0.29,8.0)"
     id("net.minecraftforge.renamer") version "1.1.2"
+    id("com.palantir.git-version") version "5.0.0"
 }
 
 val minecraft_version: String = providers.gradleProperty("minecraft_version").get()
 val forge_version: String = providers.gradleProperty("forge_version").get()
 
-version = "1.0"
-group = "io.github.legacymoddingmc.unimixins"
-base.archivesName = "MonoMixins"
+// TODO: Make this work with the configuration cache
+@Suppress("UNCHECKED_CAST")
+val gitVersion = project.extra["gitVersion"] as groovy.lang.Closure<String>
+
+project.version = gitVersion()
+project.group = "io.github.legacymoddingmc.unimixins"
+project.base.archivesName = "MonoMixins"
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 
@@ -55,6 +60,12 @@ renamer.classes(tasks.named<Jar>("jar")) {
 renamer.classes("renameJarToSrg", tasks.named<Jar>("jar")) {
     // This specifies the map via a dependency coordinate, such as 'net.minecraft:mappings_official:1.20.1-20230612.114412:map2srg@tsrg.gz'
     mappings(minecraft.dependency.toSrg.get())
+}
+
+tasks.processResources {
+    filesMatching("mcmod.info") {
+        expand("projectVersion" to project.version)
+    }
 }
 
 tasks.jar {
