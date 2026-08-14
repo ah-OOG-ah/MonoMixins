@@ -48,6 +48,8 @@ dependencies {
 
     // TODO: make this cleaner than a copy/paste... maybe use artifact transforms?
     compileOnly(thinFML12.output)
+
+    implementation("net.fabricmc:sponge-mixin:${mixinVersion}")
 }
 
 // Creates a task named 'renameJar'
