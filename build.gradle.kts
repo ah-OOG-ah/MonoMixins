@@ -33,8 +33,12 @@ repositories {
     maven(fg.minecraftLibsMaven)
 }
 
+val thinFML12 = sourceSets.create("thinFML12")
 dependencies {
     implementation(minecraft.dependency("net.minecraftforge:forge:${minecraft_version}-${forge_version}"))
+
+    // TODO: make this cleaner than a copy/paste... maybe use artifact transforms?
+    compileOnly(thinFML12.output)
 }
 
 // Creates a task named 'renameJar'
@@ -54,9 +58,18 @@ renamer.classes("renameJarToSrg", tasks.named<Jar>("jar")) {
 }
 
 tasks.jar {
-//    from("LICENSE", "LICENSE.UNLICENSE") {
-//        into("META-INF")
-//    }
+    from("LICENSE") {
+        into("META-INF")
+    }
+    from("LICENSE.UNLICENSE") {
+        into("META-INF")
+    }
+
+    manifest {
+        attributes(mapOf(
+            "FMLCorePlugin" to "io.github.legacymoddingmc.unimixins.all.AllCore"
+        ))
+    }
 }
 
 publishing {
