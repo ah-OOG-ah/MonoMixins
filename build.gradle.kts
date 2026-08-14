@@ -6,6 +6,7 @@ plugins {
     id("net.minecraftforge.gradle") version "[7.0.29,8.0)"
     id("net.minecraftforge.renamer") version "1.1.2"
     id("com.palantir.git-version") version "5.0.0"
+    id("com.gradleup.shadow") version "9.6.1"
 }
 
 val minecraft_version: String = providers.gradleProperty("minecraft_version").get()
@@ -39,6 +40,10 @@ repositories {
 }
 
 val thinFML12 = sourceSets.create("thinFML12")
+val shadowImplementation = configurations.create("shadowImplementation")
+configurations.implementation {
+    extendsFrom(shadowImplementation)
+}
 
 val mixinVersion = "0.17.3+mixin.0.8.7"
 val mixinExtrasVersion = "0.5.4"
@@ -49,7 +54,7 @@ dependencies {
     // TODO: make this cleaner than a copy/paste... maybe use artifact transforms?
     compileOnly(thinFML12.output)
 
-    implementation("net.fabricmc:sponge-mixin:${mixinVersion}")
+    shadowImplementation("net.fabricmc:sponge-mixin:${mixinVersion}")
 }
 
 // Creates a task named 'renameJar'
@@ -78,6 +83,10 @@ tasks.processResources {
     }
 }
 
+tasks.shadowJar {
+    configurations.set(listOf(shadowImplementation))
+}
+
 tasks.jar {
     from("LICENSE") {
         into("META-INF")
@@ -88,7 +97,14 @@ tasks.jar {
 
     manifest {
         attributes(mapOf(
-            "FMLCorePlugin" to "io.github.legacymoddingmc.unimixins.all.AllCore"
+            "TweakClass" to "org.spongepowered.asm.launch.MixinTweaker",
+            "FMLCorePluginContainsFMLMod" to true,
+            "ForceLoadAsMod" to true,
+            "FMLCorePlugin" to "io.github.legacymoddingmc.unimixins.all.AllCore",
+            "Premain-Class" to "org.spongepowered.tools.agent.MixinAgent",
+            "Agent-Class" to "org.spongepowered.tools.agent.MixinAgent",
+            "Can-Redefine-Classes" to true,
+            "Can-Retransform-Classes" to true,
         ))
     }
 }
