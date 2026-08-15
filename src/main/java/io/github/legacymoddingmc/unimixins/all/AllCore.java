@@ -2,6 +2,7 @@ package io.github.legacymoddingmc.unimixins.all;
 
 import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
 import cpw.mods.fml.relauncher.IFMLLoadingPlugin.MCVersion;
+import io.github.legacymoddingmc.unimixins.compat.CompatCore;
 import io.github.legacymoddingmc.unimixins.mixin.MixinCore;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,6 +17,8 @@ import org.apache.logging.log4j.Logger;
 // The embedded core plugins aren't real, so we hoist their exclusions here.
 @IFMLLoadingPlugin.TransformerExclusions({
         "io.github.legacymoddingmc.unimixins.compat.MixinCore",
+        "io.github.legacymoddingmc.unimixins.compat.CompatCore",
+        "io.github.legacymoddingmc.unimixins.compat.asm"
 })
 public class AllCore implements IFMLLoadingPlugin {
 
@@ -29,6 +32,7 @@ public class AllCore implements IFMLLoadingPlugin {
 
     private static final Class<?>[] knownCLaxxes = new Class[] {
         MixinCore.class,
+        CompatCore.class
     };
     private static final List<Class<?>> embeddedCorePluginClasses = new ArrayList<>(Arrays.asList(knownCLaxxes));
 
