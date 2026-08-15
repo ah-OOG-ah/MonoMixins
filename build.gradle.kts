@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 plugins {
     id("java")
     id("idea")
@@ -58,19 +60,13 @@ dependencies {
 }
 
 // Creates a task named 'renameJar'
-renamer.classes(tasks.named<Jar>("jar")) {
+renamer.classes(tasks.named<ShadowJar>("shadowJar")) {
     // You need to point to the mappings you wish to apply, typically this is the Mapped names to SRG for older versions.
     // ForgeGradle/Mavenizer generate these files for the dependencies you declare. So you can use the helper.
     // Or you can specify the file or dependency if you host them yourself.
     map.from(minecraft.dependency.toSrgFile)
     // This is publishable task so you can specify things such as the classifier
     archiveClassifier = "srg"
-}
-
-// If you want to create another task, or customize the name you can specify it as the first argument
-renamer.classes("renameJarToSrg", tasks.named<Jar>("jar")) {
-    // This specifies the map via a dependency coordinate, such as 'net.minecraft:mappings_official:1.20.1-20230612.114412:map2srg@tsrg.gz'
-    mappings(minecraft.dependency.toSrg.get())
 }
 
 tasks.processResources {
@@ -83,11 +79,9 @@ tasks.processResources {
     }
 }
 
-tasks.shadowJar {
-    configurations.set(listOf(shadowImplementation))
-}
-
 tasks.jar {
+    archiveClassifier = "preshadow"
+
     from("LICENSE") {
         into("META-INF")
     }
@@ -109,6 +103,11 @@ tasks.jar {
     }
 }
 
+tasks.shadowJar {
+    archiveClassifier = "dev"
+    configurations.set(listOf(shadowImplementation))
+}
+
 publishing {
     repositories {
         maven { url = layout.projectDirectory.dir("repo").asFile.toURI() }
@@ -116,6 +115,6 @@ publishing {
 
     publications.register<MavenPublication>("mavenJava") {
         from(components["java"]) // Publish the normal jar
-        artifact(tasks["renameJar"]) // Publish the renamed jar in addition
+        artifact(tasks["renameShadowJar"]) // Publish the renamed jar in addition
     }
 }
