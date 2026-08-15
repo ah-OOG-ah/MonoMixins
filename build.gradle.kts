@@ -97,7 +97,8 @@ tasks.jar {
             "FMLCorePluginContainsFMLMod" to true,
             "ForceLoadAsMod" to true,
             "FMLCorePlugin" to "io.github.legacymoddingmc.unimixins.all.AllCore",
-            "MixinConfigs" to "mixingasm.mixin.json",
+            // This doesn't include MBL's json, and I don't know why.
+            "MixinConfigs" to "mixins.gtnhmixins.json,mixingasm.mixin.json",
             "Premain-Class" to "org.spongepowered.tools.agent.MixinAgent",
             "Agent-Class" to "org.spongepowered.tools.agent.MixinAgent",
             "Can-Redefine-Classes" to true,

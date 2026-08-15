@@ -1,12 +1,13 @@
 package com.gtnewhorizon.gtnhmixins;
 
 import com.google.common.io.Files;
+import net.minecraft.launchwrapper.Launch;
+import net.minecraft.launchwrapper.LaunchClassLoader;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
-import net.minecraft.launchwrapper.Launch;
-import net.minecraft.launchwrapper.LaunchClassLoader;
 
 public final class MinecraftURLClassPath {
     /**
@@ -21,15 +22,15 @@ public final class MinecraftURLClassPath {
     public static File getJarInModPath(final String jarname) {
         try {
             return java.nio.file.Files.walk(MOD_DIRECTORY_PATH)
-                .filter( p -> {
-                    final String filename = p.toString();
-                    final String extension = Files.getFileExtension(filename);
-                    
-                    return Files.getNameWithoutExtension(filename).contains(jarname)  && ("jar".equals(extension) || "litemod".equals(extension));
-                })
-                .map(Path::toFile)
-                .findFirst()
-                .orElse(null);
+                    .filter( p -> {
+                        final String filename = p.toString();
+                        final String extension = Files.getFileExtension(filename);
+
+                        return Files.getNameWithoutExtension(filename).contains(jarname)  && ("jar".equals(extension) || "litemod".equals(extension));
+                    })
+                    .map(Path::toFile)
+                    .findFirst()
+                    .orElse(null);
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -45,13 +46,13 @@ public final class MinecraftURLClassPath {
         for(URL url : Launch.classLoader.getURLs()) {
             final String filename = url.getFile();
             final String extension = Files.getFileExtension(filename);
-            
+
             if(Files.getNameWithoutExtension(filename).contains(jarname) && ("jar".equals(extension) || "litemod".equals(extension))) {
                 return true;
             }
         }
         return false;
-    }    
+    }
 
     /**
      * Adds a Jar to the Minecraft URL ClassPath
