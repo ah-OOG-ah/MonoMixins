@@ -5,13 +5,13 @@ import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
 import cpw.mods.fml.relauncher.IFMLLoadingPlugin.MCVersion;
 import io.github.legacymoddingmc.unimixins.compat.CompatCore;
 import io.github.legacymoddingmc.unimixins.mixin.MixinCore;
+import io.github.legacymoddingmc.unimixins.mixinextras.MixinExtrasCore;
 import io.github.tox1cozz.mixinbooterlegacy.MixinBooterLegacyPlugin;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.launchwrapper.IClassTransformer;
-import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,36 +22,22 @@ import org.apache.logging.log4j.Logger;
         "io.github.legacymoddingmc.unimixins.compat.CompatCore",
         "io.github.legacymoddingmc.unimixins.compat.asm",
         "io.github.tox1cozz.mixinbooterlegacy.MixinBooterLegacyPlugin",
-        "com.gtnewhorizon.gtnhmixins.core.GTNHMixinsCore"
+        "com.gtnewhorizon.gtnhmixins.core.GTNHMixinsCore",
+        "io.github.legacymoddingmc.unimixins.mixinextras.MixinExtrasCore"
 })
 public class AllCore implements IFMLLoadingPlugin {
 
     public static final Logger LOGGER = LogManager.getLogger("unimixins");
 
-    private static String[] embeddedCorePluginClassNames = new String[] {
-//            "io.github.legacymoddingmc.unimixins.mixinextras.MixinExtrasCore"
-    };
-
-    private static final Class<?>[] knownCLaxxes = new Class[] {
+    private static final Class<?>[] embeddedCorePluginClasses = new Class[] {
         MixinCore.class,
         CompatCore.class,
         MixinBooterLegacyPlugin.class,
-        GTNHMixinsCore.class
+        GTNHMixinsCore.class,
+        MixinExtrasCore.class
     };
-    private static final List<Class<?>> embeddedCorePluginClasses = new ArrayList<>(Arrays.asList(knownCLaxxes));
 
     private static final List<IFMLLoadingPlugin> embeddedCorePluginInstances = new ArrayList<>();
-
-    static {
-        try {
-            for (String s : embeddedCorePluginClassNames) {
-                Class<?> cls = Class.forName(s);
-                embeddedCorePluginClasses.add(cls);
-            }
-        } catch(ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     public AllCore() {
         LOGGER.info("Instantiating AllCore");

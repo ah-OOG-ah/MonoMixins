@@ -59,6 +59,7 @@ dependencies {
     compileOnly(thinFML12.output)
 
     shadowImplementation("net.fabricmc:sponge-mixin:${mixinVersion}")
+    shadowImplementation("io.github.llamalad7:mixinextras-common:${mixinExtrasVersion}")
 }
 
 // Creates a task named 'renameJar'
