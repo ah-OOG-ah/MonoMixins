@@ -18,7 +18,7 @@ val gitVersion = project.extra["gitVersion"] as groovy.lang.Closure<String>
 
 project.version = gitVersion()
 project.group = "io.github.legacymoddingmc.unimixins"
-project.base.archivesName = "MonoMixins"
+project.base.archivesName = "+MonoMixins"
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 
