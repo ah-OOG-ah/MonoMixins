@@ -13,19 +13,22 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 @MCVersion("1.7.10")
+// The embedded core plugins aren't real, so we hoist their exclusions here.
+@IFMLLoadingPlugin.TransformerExclusions({
+        "io.github.legacymoddingmc.unimixins.compat.MixinCore",
+})
 public class AllCore implements IFMLLoadingPlugin {
 
     public static final Logger LOGGER = LogManager.getLogger("unimixins");
 
     private static String[] embeddedCorePluginClassNames = new String[] {
-            "io.github.legacymoddingmc.unimixins.compat.CompatCore",
-            "io.github.tox1cozz.mixinbooterlegacy.MixinBooterLegacyPlugin",
-            "com.gtnewhorizon.gtnhmixins.core.GTNHMixinsCore",
-            "io.github.legacymoddingmc.unimixins.mixinextras.MixinExtrasCore"
+//            "io.github.tox1cozz.mixinbooterlegacy.MixinBooterLegacyPlugin",
+//            "com.gtnewhorizon.gtnhmixins.core.GTNHMixinsCore",
+//            "io.github.legacymoddingmc.unimixins.mixinextras.MixinExtrasCore"
     };
 
     private static final Class<?>[] knownCLaxxes = new Class[] {
-        MixinCore.class
+        MixinCore.class,
     };
     private static final List<Class<?>> embeddedCorePluginClasses = new ArrayList<>(Arrays.asList(knownCLaxxes));
 

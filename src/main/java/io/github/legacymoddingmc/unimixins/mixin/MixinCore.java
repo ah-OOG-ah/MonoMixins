@@ -26,6 +26,10 @@ public class MixinCore implements IFMLLoadingPlugin {
         }
     }
 
+    public MixinCore() {
+        LOGGER.info("Instantiating MixinCore");
+    }
+
     @Override
     public String[] getASMTransformerClass() {
         return new String[0];
