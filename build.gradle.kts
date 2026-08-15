@@ -1,4 +1,5 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import net.minecraftforge.renamer.gradle.RenameJar
 
 plugins {
     id("java")
@@ -6,7 +7,7 @@ plugins {
     id("eclipse")
     id("maven-publish")
     id("net.minecraftforge.gradle") version "[7.0.29,8.0)"
-    id("net.minecraftforge.renamer") version "1.1.2"
+    id("net.minecraftforge.renamer") version "1.1.7"
     id("com.palantir.git-version") version "5.0.0"
     id("com.gradleup.shadow") version "9.6.1"
 }
@@ -66,7 +67,7 @@ renamer.classes(tasks.named<ShadowJar>("shadowJar")) {
     // Or you can specify the file or dependency if you host them yourself.
     map.from(minecraft.dependency.toSrgFile)
     // This is publishable task so you can specify things such as the classifier
-    archiveClassifier = "srg"
+    archiveClassifier = ""
 }
 
 tasks.processResources {
@@ -80,7 +81,7 @@ tasks.processResources {
 }
 
 tasks.jar {
-    archiveClassifier = "preshadow"
+    archiveClassifier = "dev-preshadow"
 
     from("LICENSE") {
         into("META-INF")
