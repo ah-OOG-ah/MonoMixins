@@ -55,6 +55,7 @@ dependencies {
     implementation(minecraft.dependency("net.minecraftforge:forge:${minecraft_version}-${forge_version}"))
 
     // TODO: make this cleaner than a copy/paste... maybe use artifact transforms?
+    "thinFML12CompileOnly"("com.google.code.findbugs:jsr305:1.3.9")
     compileOnly(thinFML12.output)
 
     shadowImplementation("net.fabricmc:sponge-mixin:${mixinVersion}")
