@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 @MCVersion("1.7.10")
 // The embedded core plugins aren't real, so we hoist their exclusions here.
 @IFMLLoadingPlugin.TransformerExclusions({
+        "io.github.legacymoddingmc.unimixins.all.AllCore",
         "io.github.legacymoddingmc.unimixins.compat.MixinCore",
         "io.github.legacymoddingmc.unimixins.compat.CompatCore",
         "io.github.legacymoddingmc.unimixins.compat.asm",
