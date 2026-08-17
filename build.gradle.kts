@@ -1,5 +1,5 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import net.minecraftforge.renamer.gradle.RenameJar
+import org.gradle.kotlin.dsl.register
 
 plugins {
     id("java")
@@ -42,6 +42,31 @@ repositories {
     maven(fg.minecraftLibsMaven)
 }
 
+// Mixin 0.7.x shaded ASM, and UniMixins continued doing this up to ASM 9.9.1.
+// As such, we make a sourceset to contain this shaded ASM (but marked as deprecated)
+val mixin7ASM = sourceSets.create("mixin7ASM")
+val mixin7ASMImplementation = configurations.named("mixin7ASMImplementation")
+// Do not upgrade this!
+val shadedASMVersion = "9.9.1"
+val shadedASMPackage = "org.spongepowered.asm.lib"
+val shadedASMLocation = shadedASMPackage.replace(".", "/") + "/"
+
+val shadowMixin7ASM = tasks.register<ShadowJar>("shadowMixin7ASM") {
+    description = "Create relocated ASM from UniMixins, and mark it as deprecated"
+    configurations = setOf(project.configurations.named("mixin7ASMCompileClasspath").get())
+    relocate("org.objectweb.asm", shadedASMPackage)
+    archiveClassifier = "mixin7ASM"
+
+    exclude("module-info.class")
+
+    manifest {
+        attributes(
+            mapOf("Implementation-Version" to shadedASMVersion),
+            shadedASMLocation
+        )
+    }
+}
+
 val thinFML12 = sourceSets.create("thinFML12")
 val shadowImplementation = configurations.create("shadowImplementation")
 configurations.implementation {
@@ -50,16 +75,34 @@ configurations.implementation {
 
 val mixinVersion = "0.17.3+mixin.0.8.7"
 val mixinExtrasVersion = "0.5.4"
+val asmVersion = "9.10.1"
 
 dependencies {
     implementation(minecraft.dependency("net.minecraftforge:forge:${minecraft_version}-${forge_version}"))
+
+    mixin7ASMImplementation("org.ow2.asm:asm:${shadedASMVersion}")
+    mixin7ASMImplementation("org.ow2.asm:asm-analysis:${shadedASMVersion}")
+    mixin7ASMImplementation("org.ow2.asm:asm-commons:${shadedASMVersion}")
+    mixin7ASMImplementation("org.ow2.asm:asm-tree:${shadedASMVersion}")
+    mixin7ASMImplementation("org.ow2.asm:asm-util:${shadedASMVersion}")
 
     // TODO: make this cleaner than a copy/paste... maybe use artifact transforms?
     "thinFML12CompileOnly"("com.google.code.findbugs:jsr305:1.3.9")
     compileOnly(thinFML12.output)
 
-    shadowImplementation("net.fabricmc:sponge-mixin:${mixinVersion}")
-    shadowImplementation("io.github.llamalad7:mixinextras-common:${mixinExtrasVersion}")
+    shadowImplementation(shadowMixin7ASM.get().outputs.files)
+    shadowImplementation("net.fabricmc:sponge-mixin:${mixinVersion}") {
+        exclude("org.ow2.asm")
+    }
+    shadowImplementation("io.github.llamalad7:mixinextras-common:${mixinExtrasVersion}") {
+        exclude("org.ow2.asm")
+    }
+
+    implementation("org.ow2.asm:asm:${asmVersion}")
+    implementation("org.ow2.asm:asm-analysis:${asmVersion}")
+    implementation("org.ow2.asm:asm-commons:${asmVersion}")
+    implementation("org.ow2.asm:asm-tree:${asmVersion}")
+    implementation("org.ow2.asm:asm-util:${asmVersion}")
 }
 
 // Creates a task named 'renameJar'
@@ -111,6 +154,11 @@ tasks.jar {
 tasks.shadowJar {
     archiveClassifier = "dev"
     configurations.set(listOf(shadowImplementation))
+
+    // Prefer shaded classes emulating Unimixins 0.3.1/Mixin 0.7
+    filesMatching("${shadedASMLocation.replace(".", "/")}/*") {
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    }
 }
 
 publishing {
