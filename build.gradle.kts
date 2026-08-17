@@ -1,5 +1,11 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import org.gradle.kotlin.dsl.register
+import com.github.jengelman.gradle.plugins.shadow.transformers.ResourceTransformer
+import com.github.jengelman.gradle.plugins.shadow.transformers.TransformerContext
+import org.apache.tools.zip.ZipEntry
+import org.apache.tools.zip.ZipOutputStream
+import java.util.jar.JarFile.MANIFEST_NAME
+import java.util.jar.Attributes as JavaAttributes
+import java.util.jar.Manifest as JavaManifest
 
 plugins {
     id("java")
@@ -90,13 +96,13 @@ dependencies {
     "thinFML12CompileOnly"("com.google.code.findbugs:jsr305:1.3.9")
     compileOnly(thinFML12.output)
 
-    shadowImplementation(shadowMixin7ASM.get().outputs.files)
     shadowImplementation("net.fabricmc:sponge-mixin:${mixinVersion}") {
         exclude("org.ow2.asm")
     }
     shadowImplementation("io.github.llamalad7:mixinextras-common:${mixinExtrasVersion}") {
         exclude("org.ow2.asm")
     }
+    shadowImplementation(shadowMixin7ASM.get().outputs.files)
 
     implementation("org.ow2.asm:asm:${asmVersion}")
     implementation("org.ow2.asm:asm-analysis:${asmVersion}")
@@ -151,6 +157,40 @@ tasks.jar {
     }
 }
 
+/**
+ * Appends the given entries to the first manifest found.
+ */
+class ManifestAppender(@get:Input entries: Map<String, Map<Any, Any>>): ResourceTransformer {
+    private var manifest: JavaManifest? = null
+    private val entries: Map<String, JavaAttributes> = entries.entries.map {
+        val attrs = JavaAttributes()
+        it.value.entries.forEach { attrs.putValue(it.key.toString(), it.value.toString()) }
+        return@map Pair(it.key, attrs)
+    }.toMap()
+
+    override fun canTransformResource(element: FileTreeElement): Boolean {
+        return MANIFEST_NAME.equals(element.path, ignoreCase = true)
+    }
+
+    override fun transform(context: TransformerContext) {
+        if (manifest == null) {
+            manifest = JavaManifest(context.inputStream)
+        }
+    }
+
+    override fun hasTransformedResource(): Boolean = entries.isNotEmpty()
+
+    override fun modifyOutputStream(os: ZipOutputStream, preserveFileTimestamps: Boolean) {
+        os.putNextEntry(ZipEntry(MANIFEST_NAME))
+
+        if (manifest == null) manifest = JavaManifest()
+        manifest!!.entries.putAll(entries)
+        manifest!!.write(os)
+
+        os.closeEntry()
+    }
+}
+
 tasks.shadowJar {
     archiveClassifier = "dev"
     configurations.set(listOf(shadowImplementation))
@@ -159,6 +199,11 @@ tasks.shadowJar {
     filesMatching("${shadedASMLocation.replace(".", "/")}/*") {
         duplicatesStrategy = DuplicatesStrategy.INCLUDE
     }
+
+    // TODO: Figure out how to merge this from the ASM jar, instead of copying it manually
+    transform(ManifestAppender(entries = mapOf(
+        shadedASMLocation to mapOf("Implementation-Version" to shadedASMVersion)
+    )))
 }
 
 publishing {
