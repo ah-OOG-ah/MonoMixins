@@ -19,6 +19,8 @@ import org.spongepowered.asm.mixin.Mixins;
 public class CompatCore implements IFMLLoadingPlugin {
 
     public static final Logger LOGGER = LogManager.getLogger("unimixins");
+    private static final String COMPAT_PACKAGE = "io.github.legacymoddingmc.unimixins.compat";
+    private static final String ASM_PACKAGE = COMPAT_PACKAGE + ".asm";
 
     public CompatCore() {
         LOGGER.info("Instantiating CompatCore");
@@ -27,30 +29,23 @@ public class CompatCore implements IFMLLoadingPlugin {
 
         if (CompatConfig.enableRemapper) {
             // We register the transformer this way to register it as early as possible.
-            Launch.classLoader.registerTransformer(relativeClassName("asm.ASMRemapperTransformer"));
+            Launch.classLoader.registerTransformer(ASM_PACKAGE + ".ASMRemapperTransformer");
         }
     }
 
     @Override
     public String[] getASMTransformerClass() {
         List<String> classes = new ArrayList<>();
-        if(CompatConfig.enhanceCrashReports) {
-            classes.add("io.github.legacymoddingmc.unimixins.compat.asm.EnhanceCrashReportsTransformer");
+        if (CompatConfig.enhanceCrashReports) {
+            classes.add(ASM_PACKAGE + ".EnhanceCrashReportsTransformer");
         }
-        if(IgnoreDuplicateJarsTransformer.wantsToRun()) {
-            classes.add("io.github.legacymoddingmc.unimixins.compat.asm.IgnoreDuplicateJarsTransformer");
+        if (IgnoreDuplicateJarsTransformer.wantsToRun()) {
+            classes.add(ASM_PACKAGE + ".IgnoreDuplicateJarsTransformer");
         }
-        if(Boolean.parseBoolean(System.getProperty("unimixins.compat.hackClasspathModDiscovery", "false"))) {
-            classes.add("io.github.legacymoddingmc.unimixins.compat.asm.HackClasspathModDiscoveryTransformer");
+        if (Boolean.parseBoolean(System.getProperty("unimixins.compat.hackClasspathModDiscovery", "false"))) {
+            classes.add(ASM_PACKAGE + ".HackClasspathModDiscoveryTransformer");
         }
         return classes.toArray(new String[0]);
-    }
-
-    private static String relativeClassName(String relName) {
-        String name = CompatCore.class.getName();
-        name = name.substring(0, name.lastIndexOf('.') + 1);
-        name += relName;
-        return name;
     }
 
     @Override
@@ -70,13 +65,13 @@ public class CompatCore implements IFMLLoadingPlugin {
     @Override
     public void injectData(Map<String, Object> data) {
         if(CompatConfig.enhanceCrashReports) {
-            Mixins.registerErrorHandlerClass("io.github.legacymoddingmc.unimixins.compat.MixinErrorHandler");
+            Mixins.registerErrorHandlerClass(COMPAT_PACKAGE + ".MixinErrorHandler");
         }
     }
 
     @Override
     public String getAccessTransformerClass() {
-        return "io.github.legacymoddingmc.unimixins.compat.CompatCore$DummyTransformer";
+        return COMPAT_PACKAGE + ".CompatCore$DummyTransformer";
     }
 
     /** Coremod Access Transformers are initialized at the beginning of {@link cpw.mods.fml.common.launcher.FMLDeobfTweaker#injectIntoClassLoader}.

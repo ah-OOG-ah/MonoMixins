@@ -14,16 +14,17 @@ import org.objectweb.asm.commons.RemappingClassAdapter;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
-/**
- * <p>The ASM package name used by Mixin differs between mixin loaders. This transformer remaps references to ASM to use the
- * correct package name for the current runtime environment, allowing mods to work regardless of what mixin loader they
- * were compiled against.</p>
- * <p>The following packages are remapped:</p>
- * <li><code>org.spongepowered.libraries.org.objectweb.asm</code> (MixinBooterLegacy, GTNHMixins) in all classes</li>
- * <li><code>org.spongepowered.asm.lib</code> (Mixin 0.7, UniMixins) in all classes</li>
- * <li><code>org.objectweb.asm</code> (Mixin 0.8) in classes implementing {@link org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin} or annotated with {@link io.github.legacymoddingmc.unimixins.compat.api.RemapASMForMixin}</li>
- */
-
+/// The ASM package name used by Mixin differs between mixin loaders. This transformer remaps references to ASM to use
+/// the correct package name for the current runtime environment, allowing mods to work regardless of what mixin loader
+/// they were compiled against.
+///
+/// The following packages are remapped:
+///   - `org.spongepowered.libraries.org.objectweb.asm` (MixinBooterLegacy, GTNHMixins) in all classes
+///   - `org.spongepowered.asm.lib` (Mixin 0.7, UniMixins) in all classes
+///   - `org.objectweb.asm` (Mixin 0.8) in classes implementing
+/// [org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin] or annotated with
+/// [io.github.legacymoddingmc.unimixins.compat.api.RemapASMForMixin]
+@SuppressWarnings("unused")
 public class ASMRemapperTransformer implements IClassTransformer {
 
     private static final String ASM_PACKAGE_UNSHADED = "org/objectweb/asm/";
