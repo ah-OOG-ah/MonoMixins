@@ -46,6 +46,10 @@ repositories {
     minecraft.mavenizer(this)
     maven(fg.forgeMaven)
     maven(fg.minecraftLibsMaven)
+    maven {
+        name = "GTNH Maven"
+        url = uri("https://nexus.gtnewhorizons.com/repository/releases")
+    }
 }
 
 // Mixin 0.7.x shaded ASM, and UniMixins continued doing this up to ASM 9.9.1.
@@ -102,13 +106,15 @@ dependencies {
     shadowImplementation("io.github.llamalad7:mixinextras-common:${mixinExtrasVersion}") {
         exclude("org.ow2.asm")
     }
-    shadowImplementation(shadowMixin7ASM.get().outputs.files)
+    //shadowImplementation(shadowMixin7ASM.get().outputs.files)
 
     implementation("org.ow2.asm:asm:${asmVersion}")
     implementation("org.ow2.asm:asm-analysis:${asmVersion}")
     implementation("org.ow2.asm:asm-commons:${asmVersion}")
     implementation("org.ow2.asm:asm-tree:${asmVersion}")
     implementation("org.ow2.asm:asm-util:${asmVersion}")
+
+    compileOnly("com.gtnewhorizons.retrofuturabootstrap:RetroFuturaBootstrap:1.1.1")
 }
 
 // Creates a task named 'renameJar'
@@ -121,13 +127,19 @@ renamer.classes(tasks.named<ShadowJar>("shadowJar")) {
     archiveClassifier = ""
 }
 
+val expandableResources = setOf(
+    "mcmod.info",
+    "META-INF/rfb-plugin/monomixins.properties"
+)
 tasks.processResources {
-    filesMatching("mcmod.info") {
-        expand(
-            "projectVersion" to project.version,
-            "mixinVersion" to mixinVersion,
-            "mixinExtrasVersion" to mixinExtrasVersion
-        )
+    eachFile {
+        if (path in expandableResources) {
+            expand(
+                "projectVersion" to project.version,
+                "mixinVersion" to mixinVersion,
+                "mixinExtrasVersion" to mixinExtrasVersion
+            )
+        }
     }
 }
 
