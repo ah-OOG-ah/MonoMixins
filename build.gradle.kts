@@ -3,6 +3,14 @@ import com.github.jengelman.gradle.plugins.shadow.transformers.ResourceTransform
 import com.github.jengelman.gradle.plugins.shadow.transformers.TransformerContext
 import org.apache.tools.zip.ZipEntry
 import org.apache.tools.zip.ZipOutputStream
+import org.gradle.api.attributes.Bundling.BUNDLING_ATTRIBUTE
+import org.gradle.api.attributes.Bundling.EXTERNAL
+import org.gradle.api.attributes.Category.CATEGORY_ATTRIBUTE
+import org.gradle.api.attributes.Category.DOCUMENTATION
+import org.gradle.api.attributes.DocsType.DOCS_TYPE_ATTRIBUTE
+import org.gradle.api.attributes.DocsType.SOURCES
+import org.gradle.api.attributes.Usage.JAVA_RUNTIME
+import org.gradle.api.attributes.Usage.USAGE_ATTRIBUTE
 import java.util.jar.JarFile.MANIFEST_NAME
 import java.util.jar.Attributes as JavaAttributes
 import java.util.jar.Manifest as JavaManifest
@@ -179,6 +187,36 @@ tasks.shadowJar {
     transform(ManifestAppender(entries = mapOf(
         "org/spongepowered/asm/lib/" to mapOf("Implementation-Version" to asmVersion)
     )))
+
+    dependsOn("sourcesJar")
+}
+
+tasks.register<org.gradle.jvm.tasks.Jar>("sourcesJar") {
+    description = "Assemble a jar with the main source and any shaded deps."
+    group = "build"
+    archiveClassifier = "sources"
+
+    val sources = shadowImplementation.incoming.artifactView {
+        withVariantReselection()
+        attributes {
+            attribute(USAGE_ATTRIBUTE, objects.named(Usage::class.java, JAVA_RUNTIME))
+            attribute(CATEGORY_ATTRIBUTE, objects.named(Category::class.java, DOCUMENTATION))
+            attribute(BUNDLING_ATTRIBUTE, objects.named(Bundling::class.java, EXTERNAL))
+            attribute(DOCS_TYPE_ATTRIBUTE, objects.named(DocsType::class.java, SOURCES))
+        }
+    }
+
+    sources.artifacts.forEach {
+        zipTree(it.file.absolutePath).visit {
+            if (path.startsWith("META-INF") || file.isDirectory)
+                return@visit
+            from(file) {
+                into(path.substringBeforeLast("/"))
+            }
+        }
+    }
+
+    from(sourceSets.main.get().allSource)
 }
 
 publishing {
