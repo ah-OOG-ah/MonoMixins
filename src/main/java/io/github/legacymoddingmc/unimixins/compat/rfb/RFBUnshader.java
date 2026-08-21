@@ -7,8 +7,6 @@ import com.gtnewhorizons.retrofuturabootstrap.api.ClassNodeHandle;
 import com.gtnewhorizons.retrofuturabootstrap.api.ExtensibleClassLoader;
 import com.gtnewhorizons.retrofuturabootstrap.api.RfbClassTransformer;
 import java.util.jar.Manifest;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.ClassVisitor;
@@ -20,19 +18,28 @@ import org.objectweb.asm.tree.ClassNode;
 /// Mixin 0.7 shaded ASM in org.spongepowered.asm.lib. Unimixins continued to support this at runtime... *and* compile
 /// time, unfortunately. This means we have to *re*remap mods using this at runtime.
 @SuppressWarnings("unused")
-public class RFBASMRemapper implements RfbClassTransformer {
+public class RFBUnshader implements RfbClassTransformer {
 
     private static final String ASM_PACKAGE_UNSHADED = "org/objectweb/asm/";
     private static final String ASM_PACKAGE_LEGACY = "org/spongepowered/asm/lib/";
     private static final String ASM_PACKAGE_MBL = "org/spongepowered/libraries/org/objectweb/asm/";
 
-    private static final String[] ASM_PACKAGE_PREFIXES = new String[]{
+    private static final String GUAVA_DEPRECATED = "io/github/legacymoddingmc/unimixins/deprecated/com/google";
+    private static final String GUAVA_LEGACY = "org/spongepowered/libraries/com/google";
+
+    private static final String[] ASM_SHADED_PREFIXES = new String[]{
             ASM_PACKAGE_LEGACY,
             ASM_PACKAGE_MBL
     };
 
-    private static final BytePatternMatcher wrongAsmMatcher =
-            new BytePatternMatcher(ASM_PACKAGE_PREFIXES, BytePatternMatcher.Mode.Contains);
+    private static final String[] SHADED_PREFIXES = new String[]{
+            ASM_PACKAGE_LEGACY,
+            ASM_PACKAGE_MBL,
+            GUAVA_LEGACY
+    };
+
+    private static final BytePatternMatcher wrongShadeMatcher =
+            new BytePatternMatcher(SHADED_PREFIXES, BytePatternMatcher.Mode.Contains);
 
     @Override
     public @NotNull String id() { return "asmreremapper"; }
@@ -51,7 +58,7 @@ public class RFBASMRemapper implements RfbClassTransformer {
         assert classNode.getOriginalMetadata() != null;
         return classNode
                 .getOriginalMetadata()
-                .matchesBytes(classNode.getOriginalBytes(), wrongAsmMatcher);
+                .matchesBytes(classNode.getOriginalBytes(), wrongShadeMatcher);
     }
 
     @Override
@@ -61,7 +68,7 @@ public class RFBASMRemapper implements RfbClassTransformer {
             @Nullable Manifest manifest,
             @NotNull String className,
             @NotNull ClassNodeHandle cnHandle) {
-        LOGGER.info("Transforming class {} to fit current mixin environment.", className);
+        LOGGER.info("Transforming legacy packages in {}.", className);
         final ClassNode classNode = cnHandle.getNode();
         if (classNode == null) return false;
 
@@ -92,8 +99,9 @@ public class RFBASMRemapper implements RfbClassTransformer {
         public ASMRemapper() { super(Opcodes.ASM9); }
 
         public String map(String typeName) {
-            for (String s : ASM_PACKAGE_PREFIXES)
+            for (String s : ASM_SHADED_PREFIXES)
                 if (typeName.startsWith(s)) return ASM_PACKAGE_UNSHADED + typeName.substring(s.length());
+            if (typeName.startsWith(GUAVA_LEGACY)) return GUAVA_DEPRECATED + typeName.substring(GUAVA_LEGACY.length());
             return typeName;
         }
     }

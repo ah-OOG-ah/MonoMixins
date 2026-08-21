@@ -10,7 +10,7 @@ public class MonoMixinsRfbPlugin implements RfbPlugin {
     @Override
     public @NotNull RfbClassTransformer @Nullable [] makeTransformers() {
         return new RfbClassTransformer[] {
-                new RFBASMRemapper()
+                new RFBUnshader()
         };
     }
 }
