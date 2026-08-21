@@ -61,9 +61,26 @@ repositories {
 }
 
 val thinFML12 = sourceSets.create("thinFML12")
+
+// Note that this is deliberately not dependend on directly; instead, these classes are shaded and renamed to .klass, to
+// avoid IDEs from decompiling and indexing them.
+val hiddenImplementation = configurations.create("hiddenLibsImplementation")
+var hiddenJar = tasks.register<ShadowJar>("hiddenJar") {
+    description = "Contains relocated deprecated libraries."
+    configurations = listOf(hiddenImplementation)
+    archiveClassifier = "hidden"
+
+    // Everything here needs to be .klass, so IDEs can't index them.
+    rename("""(.*)\.class""", "$1.klass")
+    exclude("META-INF/maven/**")
+    relocate("com.google", "io.github.legacymoddingmc.unimixins.deprecated.com.google")
+}
+// This exists solely because Gradle can't handle a missing source artifact from the above task.
+val shImplementation = configurations.create("shadedHiddenImplementation")
+
 val shadowImplementation = configurations.create("shadowImplementation")
 configurations.implementation {
-    extendsFrom(shadowImplementation)
+    extendsFrom(shadowImplementation, shImplementation)
 }
 
 val mixinVersion = "0.17.3+mixin.0.8.7"
@@ -77,6 +94,9 @@ dependencies {
     "thinFML12CompileOnly"("com.google.code.findbugs:jsr305:1.3.9")
     compileOnly(thinFML12.output)
 
+    hiddenImplementation("com.google.guava:guava:21.0")
+
+    shImplementation(hiddenJar.get().outputs.files)
     shadowImplementation("net.fabricmc:sponge-mixin:${mixinVersion}") {
         exclude("org.ow2.asm")
     }
@@ -181,14 +201,12 @@ class ManifestAppender(@get:Input entries: Map<String, Map<Any, Any>>): Resource
 
 tasks.shadowJar {
     archiveClassifier = "dev"
-    configurations.set(listOf(shadowImplementation))
+    configurations.set(listOf(shadowImplementation, shImplementation))
 
     // TODO: Figure out how to merge this from the ASM jar, instead of copying it manually
     transform(ManifestAppender(entries = mapOf(
         "org/spongepowered/asm/lib/" to mapOf("Implementation-Version" to asmVersion)
     )))
-
-    dependsOn("sourcesJar")
 }
 
 tasks.register<org.gradle.jvm.tasks.Jar>("sourcesJar") {
@@ -196,6 +214,7 @@ tasks.register<org.gradle.jvm.tasks.Jar>("sourcesJar") {
     group = "build"
     archiveClassifier = "sources"
 
+    // This deliberately excludes the hidden shaded libraries.
     val sources = shadowImplementation.incoming.artifactView {
         withVariantReselection()
         attributes {
@@ -217,6 +236,10 @@ tasks.register<org.gradle.jvm.tasks.Jar>("sourcesJar") {
     }
 
     from(sourceSets.main.get().allSource)
+}
+
+tasks.assemble {
+    dependsOn("sourcesJar")
 }
 
 publishing {
