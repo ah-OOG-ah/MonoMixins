@@ -30,6 +30,7 @@ public class CompatCore implements IFMLLoadingPlugin {
         if (CompatConfig.enableRemapper) {
             // We register the transformer this way to register it as early as possible.
             Launch.classLoader.registerTransformer(ASM_PACKAGE + ".ASMRemapperTransformer");
+            Launch.classLoader.registerTransformer(ASM_PACKAGE + ".GuavaUnpacker");
         }
     }
 

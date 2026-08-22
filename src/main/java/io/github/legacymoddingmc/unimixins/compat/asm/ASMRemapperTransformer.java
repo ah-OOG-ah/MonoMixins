@@ -15,7 +15,7 @@ public class ASMRemapperTransformer extends RemappingTransformer implements ICla
     private static final String ASM_PACKAGE_LEGACY = "org/spongepowered/asm/lib/";
     private static final String ASM_PACKAGE_MBL = "org/spongepowered/libraries/org/objectweb/asm/";
 
-    private static final String GUAVA_DEPRECATED = "io/github/legacymoddingmc/unimixins/deprecated/com/google";
+    public static final String GUAVA_DEPRECATED = "io/github/legacymoddingmc/unimixins/deprecated/com/google";
     private static final String GUAVA_LEGACY = "org/spongepowered/libraries/com/google";
 
     // If RFB is present, it will handle ASM - we can skip that
