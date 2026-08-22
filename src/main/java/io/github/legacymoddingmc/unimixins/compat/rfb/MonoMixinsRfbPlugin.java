@@ -5,7 +5,6 @@ import com.gtnewhorizons.retrofuturabootstrap.api.RfbPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@SuppressWarnings("unused")
 public class MonoMixinsRfbPlugin implements RfbPlugin {
     @Override
     public @NotNull RfbClassTransformer @Nullable [] makeTransformers() {
