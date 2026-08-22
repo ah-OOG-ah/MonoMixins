@@ -70,8 +70,6 @@ var hiddenJar = tasks.register<ShadowJar>("hiddenJar") {
     configurations = listOf(hiddenImplementation)
     archiveClassifier = "hidden"
 
-    // Everything here needs to be .klass, so IDEs can't index them.
-    rename("""(.*)\.class""", "$1.klass")
     exclude("META-INF/maven/**")
     relocate("com.google", "io.github.legacymoddingmc.unimixins.deprecated.com.google")
 }
@@ -201,12 +199,19 @@ class ManifestAppender(@get:Input entries: Map<String, Map<Any, Any>>): Resource
 
 tasks.shadowJar {
     archiveClassifier = "dev"
-    configurations.set(listOf(shadowImplementation, shImplementation))
+    configurations.set(listOf(shadowImplementation))
 
     // TODO: Figure out how to merge this from the ASM jar, instead of copying it manually
     transform(ManifestAppender(entries = mapOf(
         "org/spongepowered/asm/lib/" to mapOf("Implementation-Version" to asmVersion)
     )))
+
+    from (zipTree(shImplementation.incoming.files.singleFile)) {
+        eachFile {
+            // Everything here needs to be .klass, so IDEs can't index them.
+            path = path.replaceAfterLast(".", "klass")
+        }
+    }
 }
 
 tasks.register<org.gradle.jvm.tasks.Jar>("sourcesJar") {
