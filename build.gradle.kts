@@ -20,7 +20,7 @@ plugins {
     id("idea")
     id("eclipse")
     id("maven-publish")
-    id("net.minecraftforge.gradle") version "[7.0.29,8.0)"
+    id("net.minecraftforge.gradle") version "7.0.36"
     id("net.minecraftforge.renamer") version "1.1.7"
     id("com.palantir.git-version") version "5.0.0"
     id("com.gradleup.shadow") version "9.6.1"
